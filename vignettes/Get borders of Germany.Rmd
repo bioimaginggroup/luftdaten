@@ -1,0 +1,50 @@
+---
+title: "Get borders of Germany"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+In order to map locations, we need borders of Germany. 
+
+Data can be downloaded here:
+
+```{r eval=FALSE}
+    con<-curl::curl_download("https://biogeo.ucdavis.edu/data/gadm2.8/rds/DEU_adm0.rds","data/DEU_adm0.rds")
+    con<-curl::curl_download("https://biogeo.ucdavis.edu/data/gadm2.8/rds/DEU_adm1.rds","data/DEU_adm1.rds")
+```
+
+* DEU_adm0 is Germany 
+* DEU_adm1 are German states
+
+We extract polygons, as we are not interested in anything else:
+```{r}
+    germany<-readRDS("data/DEU_adm0.rds")
+    germany<-germany@polygons[[1]]@Polygons
+    for (i in 1:length(germany))
+    {
+      germany[[i]]<-germany[[i]]@coords
+    }
+    
+    min.x<-min(unlist(lapply(germany,function(g)min(g[,1]))))
+    max.x<-max(unlist(lapply(germany,function(g)max(g[,1]))))
+    min.y<-min(unlist(lapply(germany,function(g)min(g[,2]))))
+    max.y<-max(unlist(lapply(germany,function(g)max(g[,2]))))
+
+    germany16<-readRDS("data/DEU_adm1.rds")
+    germany16<-germany16@polygons
+    g16<-list()
+    counter<-0
+    for (j in 1:length(germany16))
+      for (i in 1:length(germany16[[j]]@Polygons))
+      {
+        counter<-counter+1
+        g16[[counter]]=germany16[[j]]@Polygons[[i]]@coords
+      }
+    germany16<-g16
+    remove(g16)
+    save(germany,germany16,max.x,min.x,max.y,min.y,file="inst/data/germanyborder.rda")
+```
+

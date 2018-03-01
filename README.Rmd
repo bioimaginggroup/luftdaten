@@ -1,0 +1,92 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+# Ploting
+
+
+```{r read_locations}
+library(RSQLite)
+db <- dbConnect(SQLite(), "db/luftdaten.2018-01-04.sqlite")
+dbListFields(db,"locid")
+loc<-dbReadTable(db,"locid")
+dbDisconnect(db)
+```
+```{r plot_locations in states}
+data(germanyborder)
+par(mai=rep(0,4),pin=0.5*c(max.x-min.x,max.y-min.y))
+plot(c(min.x,max.x),c(min.y,max.y),axes=FALSE,col="white",xlab="",ylab="")
+for (i in 1:length(germany16))polygon(germany16[[i]],border=grey(0.9),col="transparent")
+for (i in 1:length(germany))polygon(germany[[i]],border=grey(.5))
+points(loc$lon,loc$lat, pch=19, cex=0.2)
+```
+
+## Plot timelines
+
+```{r}
+db <- dbConnect(SQLite(), "db/luftdaten.2018-01-04.sqlite")
+dbListTables(db)
+dbListFields(db,"messungen")
+dbListFields(db,"temphum")
+sql="select temphum.temperature,messungen.timestamp from messungen, temphum where messungen.id=temphum.id and temphum.temperature!='NA'"
+result<-dbGetQuery(db,sql)
+dbDisconnect(db)
+print(dim(result))
+result$Date<-as.Date(result$timestamp)
+plot(result$Date,result$temperature, pch=19, cex=0.3)
+```
+
+```{r}
+plot_per(result$temperature,result$Date, type="day", main="Temperature per Day")
+plot_per(result$temperature,result$Date, type="weekday", main="Temperature per Weekday")
+plot_per(result$temperature,result$Date, type="monthday", main="Temperature per Day")
+plot_per(result$temperature,result$Date, type="month", main="Temperature per Month")
+plot_per(result$temperature,result$Date, type="week", main="Temperature per Week")
+```
+
+
+```{r}
+plot_per(result$temperature,result$timestamp,type="hour", main="Temperature per Hour")
+plot_per(result$temperature,result$timestamp,type="minute", main="Temperature per Minute")
+plot_per(result$temperature,result$timestamp,type="second", main="Temperature per Second")
+```
+
+
+
+```{r}
+db <- dbConnect(SQLite(), "/home/schmid/software/luftdaten/luftdaten2.sqlite")
+dbListTables(db)
+dbListFields(db,"messungen")
+dbListFields(db,"temphum")
+sql="select temphum.humidity,messungen.timestamp from messungen, temphum where messungen.id=temphum.id and temphum.humidity!='NA'"
+result<-dbGetQuery(db,sql)
+dbDisconnect(db)
+
+print(dim(result))
+result$Date<-as.Date(result$timestamp)
+plot_per(result$humidity,result$Date, type="day", main="Humidity per Day")
+plot_per(result$humidity,result$Date, type="weekday", main="Humidity per Weekday")
+plot_per(result$humidity,result$Date, type="monthday", main="Humidity per Day")
+plot_per(result$humidity,result$Date, type="month", main="Humidity per Month")
+plot_per(result$humidity,result$Date, type="week", main="Humidity per Week")
+plot_per(result$humidity,result$timestamp,type="hour", main="Humidity per Hour")
+plot_per(result$humidity,result$timestamp,type="minute", main="Humidity per Minute")
+plot_per(result$humidity,result$timestamp,type="second", main="Humidity per Second")
+```
+
+
+
+```{r}
+db <- dbConnect(SQLite(), "/home/schmid/software/luftdaten/luftdaten2.sqlite")
+dbListTables(db)
+dbListFields(db,"messungen")
+dbListFields(db,"P")
+sql="select P.P1,messungen.timestamp from messungen, temphum where messungen.id=temphum.id and temphum.humidity!='NA'"
+```
+
+
+
+

@@ -1,0 +1,125 @@
+---
+title: "Data aquisition"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Download data archive from [luftdaten.info](http://luftdaten.info) 
+
+Function *luftdaten::LD_download()* saves data locally. 
+
+Plot the size of data per day:
+```{r cache=TRUE, eval=FALSE}
+folder="/media/schmid/local/data/luftdaten/"
+here=getwd()
+system(paste0("cd ",folder,"; du -s * > ",here,"/size.txt"))
+```
+```{r show=TRUE}
+size<-read.table(paste0(here,"/size.txt"), header=FALSE, col.names=c("size","date"))
+size$date<-as.Date(size$date)
+size$size<-size$size/(2^10)
+plot(size$date,size$size, xlab="Date",main="Data per day", ylab="MB",type="s")
+```
+
+## Prepare database  (*mysqlite* using *RSQLite* package)
+
+Use the following structure:
+* lastedate
+** lastedate: last date of input
+* sensor
+** locid: id of location/sensor (own)
+** sensor_id: id of sensor (from data)
+** sensor_type: type of sensor
+** location: location id (from data)
+** lat: latitude
+** lon: longitude
+* messungen
+** id
+** locid
+** timestamp
+
+```{r eval=FALSE}
+library(RSQLite)
+library(DBI)
+db <- dbConnect(SQLite(), "db/luftdaten-temp.sqlite")
+dbWriteTable(db,"lastdate",data.frame("lastdate"="2017-03-01"),overwrite=TRUE)
+temp0<-data.frame("id"=integer(),"sensor_id"=integer(),"sensor_type"=character(),
+                  "location"=integer(),"lat"=double(),"lon"=double())
+dbWriteTable(db,"locid",temp0,append=TRUE)
+temp0<-data.frame("id"=integer(), "locid"=integer(), "timestamp"=as.Date(character()))
+dbWriteTable(db,"messungen",temp0,append=TRUE)
+dbDisconnect(db)
+```
+```{r}
+library(luftdaten)
+library(RSQLite)
+library(DBI)
+db <- dbConnect(SQLite(), "db/luftdaten2018.sqlite")
+tab<-dbListTables(db)
+print(tab)
+for (i in tab)print(dbListFields(db,i))
+dbDisconnect(db)
+```
+
+
+## Save data to database. 
+
+```{r ld_sql}
+library(luftdaten)
+library(RSQLite)
+library(DBI)
+db <- dbConnect(SQLite(), "/home/schmid/software/luftdaten/db/luftdaten2018.sqlite")
+LD_sql(db, source="/media/schmid/local/data/luftdaten/",
+       folder="/home/schmid/software/luftdaten", dbname="db/luftdaten2018")
+dbDisconnect(db)
+```
+
+Script will tell us, if new measurement are found...
+
+```{r}
+library(luftdaten)
+initializeDB("../db/temp",start="2018-01-01")
+db <- dbConnect(SQLite(), "../db/temp.sqlite")
+tab<-dbListTables(db)
+print(tab)
+for (i in tab)print(dbListFields(db,i))
+dbReadTable(db,"lastdate")
+dbDisconnect(db)
+```
+
+```{r}
+db <- dbConnect(SQLite(), "../db/temp.sqlite")
+LD_sql(db, end="2018/01/01", source="/media/schmid/local/data/luftdaten/",save=FALSE)
+dbDisconnect(db)
+```
+```{r}
+temp<-read.csv("/media/schmid/local/data/luftdaten/2018-01-01/2018-01-01_pms3003_sensor_368.csv",sep=";")
+names(temp)
+```
+```{r}
+db <- dbConnect(SQLite(), "../db/temp2.sqlite")
+dbWriteTable(db,"test",data.frame("x"=7,"y"="c"))
+dbWriteTable(db,"test",data.frame("x"=2,"Z"="klo"),append=TRUE)
+```
+
+
+```{r}
+library(luftdaten)
+library(DBI)
+library(RSQLite)
+initializeDB("db/2018",start="2018-01-01")
+db <- dbConnect(SQLite(), "db/2018.sqlite")
+LD_sql(db, end="2018/02/25", source="/media/schmid/local/data/luftdaten/",save=2,dbname="db/2018")
+dbDisconnect(db)
+```
+
+library(luftdaten)
+library(DBI)
+library(RSQLite)
+db <- dbConnect(SQLite(), "db/201617.sqlite")
+LD_sql(db, end="2017/12/31", source="/media/schmid/local/data/luftdaten/",save=1,dbname="db/201617")
+dbDisconnect(db)
+
