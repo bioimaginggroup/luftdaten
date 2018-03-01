@@ -10,6 +10,11 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Download data archive from [luftdaten.info](http://luftdaten.info) 
 
 Function *luftdaten::LD_download()* saves data locally. 
+```{r eval=FALSE}
+library(luftdaten)
+library(curl)
+LD_download("/media/schmid/local/data/luftdaten/", start="2018-02-27", end="2018-02-28")
+```
 
 Plot the size of data per day:
 ```{r cache=TRUE, eval=FALSE}
@@ -116,10 +121,36 @@ LD_sql(db, end="2018/02/25", source="/media/schmid/local/data/luftdaten/",save=2
 dbDisconnect(db)
 ```
 
+
+## Databases are to big
+
+Idea: One database per sensor type
+
+```{r}
+  source="/media/schmid/local/data/luftdaten/" 
+  x=as.Date("2016-10-01")
+  end<-Sys.Date()
+  st<-c()
+  while(x<end)
+    {
+    files<-list.files(paste0(source,"/",x))
+    files<-files[grep(pattern = ".csv",files)]
+    if (length(files)>0)
+      {
+      strip<-strsplit(files,"_")
+      strip<-matrix(unlist(strip),nrow=length(strip),byrow=TRUE)[,2]
+      st<-unique(c(st,strip))
+    }
+    x<-x+1
+  }
+  print(st)
+  sensortypes<-st
+  save(sensortypes, file="../inst/data/sensortypes.rda")
+```
+
+
+```{r}
 library(luftdaten)
-library(DBI)
-library(RSQLite)
-db <- dbConnect(SQLite(), "db/201617.sqlite")
-LD_sql(db, end="2017/12/31", source="/media/schmid/local/data/luftdaten/",save=1,dbname="db/201617")
-dbDisconnect(db)
+LD_sql2(start="2018/01/31", end="2018/02/28", source="/media/schmid/local/data/luftdaten/",dbname="db/2018-", sensortype="sds011",verbose=FALSE)
+```
 

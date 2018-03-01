@@ -1,7 +1,7 @@
 Package: luftdaten
 Type: Package
 Title: Analysing data from luftdaten.info
-Version: 0.1.1
+Version: 0.1.6
 Author: Volker Schmid (volker.schmid@lmu.de)
 Maintainer: Volker Schmid <volker.schmid@lmu.det>
 Description: Analysing data from luftdaten.info

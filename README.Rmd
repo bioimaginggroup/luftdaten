@@ -10,18 +10,21 @@ output: html_notebook
 
 ```{r read_locations}
 library(RSQLite)
-db <- dbConnect(SQLite(), "db/luftdaten.2018-01-04.sqlite")
+db <- dbConnect(SQLite(), "db/2018.2018-01-04.sqlite")
 dbListFields(db,"locid")
 loc<-dbReadTable(db,"locid")
 dbDisconnect(db)
 ```
 ```{r plot_locations in states}
+library(luftdaten)
 data(germanyborder)
+png("loc.png")
 par(mai=rep(0,4),pin=0.5*c(max.x-min.x,max.y-min.y))
 plot(c(min.x,max.x),c(min.y,max.y),axes=FALSE,col="white",xlab="",ylab="")
 for (i in 1:length(germany16))polygon(germany16[[i]],border=grey(0.9),col="transparent")
 for (i in 1:length(germany))polygon(germany[[i]],border=grey(.5))
 points(loc$lon,loc$lat, pch=19, cex=0.2)
+dev.off()
 ```
 
 ## Plot timelines

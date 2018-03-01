@@ -2,6 +2,7 @@
 
 export(LD_download)
 export(LD_sql)
+export(LD_sql2)
 export(initializeDB)
 export(plot_per)
 import(DBI)

@@ -1,0 +1,83 @@
+---
+title: "Looking into data"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(luftdaten)
+setwd("../") #we are in vignette directory
+#data(sensortypes)
+load("inst/data/sensortypes.rda")
+sensortypes<-sensortypes[c(2,4,5,6,7,8,9,10)]
+for (s in toupper(sensortypes))
+{
+  db<-dbConnect(SQLite(),paste0("db/",s,".sqlite"))
+  cat(s)
+  cat(": ")
+  cat(dbListFields(db,"data"))
+  cat("\n")
+  dbDisconnect(db)
+}
+for (s in toupper(sensortypes))
+{
+  db<-dbConnect(SQLite(),paste0("db/",s,".sqlite"))
+  cat(s)
+  cat(": ")
+  cat(dim(dbReadTable(db,"data")))
+  cat("\n")
+  dbDisconnect(db)
+}
+for (s in toupper(sensortypes))
+{
+  db<-dbConnect(SQLite(),paste0("db/",s,".sqlite"))
+  cat(s)
+  cat(": ")
+  cat(dim(dbReadTable(db,"locid")))
+  cat("\n")
+  dbDisconnect(db)
+}
+```
+
+
+
+```{r locations, include=TRUE}
+setwd("../")
+for (s in toupper(sensortypes))
+{
+  db<-dbConnect(SQLite(),paste0("db/",s,".sqlite"))
+  plot_loc(db, range=c(5.8,15.1,47.2,55.1))
+  title(s)
+  dbDisconnect(db)
+}
+```
+```{r stuttgart}
+  s<-"BME280"
+  db<-dbConnect(SQLite(),paste0("../db/",s,".sqlite"))
+  loc<-dbGetQuery(db, "SELECT lat, lon from locid where lon>8.8 AND lon<9.4 AND lat>48.1 AND lat<48.9")
+  plot(loc$lon, loc$lat)
+  
+  library(osmar)
+  src <- osmsource_api()
+bb <- center_bbox(9.174, 48.768, 2000, 2000)
+ctown <- get_osm(bb, source = src)
+plot(ctown)
+road <- find(ctown, way(tags(k == "highway")))
+road <- find_down(ctown, way(road))
+road <- subset(ctown, ids = road)
+plot(road)
+points(loc$lon, loc$lat, col="blue")
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
