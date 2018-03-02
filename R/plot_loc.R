@@ -1,13 +1,12 @@
 #' Plot locations from database
 #'
-#' @param db SQLite data base
-#' @param range 
+#' @param loc dataframe with lat and lon (latitude and longitude)
+#' @param range vector of length 4, corners of area to plot 
 #'
 #' @export
 #'
-plot_loc<-function(db, range=NA)
+plot_loc<-function(loc, range=c(5.86,15.05,47.27,55.06))
 {
-  loc<-dbReadTable(db,"locid")
   library(luftdaten)
   data(germanyborder)
   if (any(is.na(range)))

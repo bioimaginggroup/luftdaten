@@ -1,0 +1,92 @@
+---
+title: "Plotting P"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Lets plot P measurement
+
+```{r}
+library(RSQLite)
+db<-dbConnect(SQLite(),"../db/CopyOf2018-SDS011.sqlite")
+loc<-dbReadTable(db,"locid")
+print(dim(loc))
+plot_loc(loc)
+print(dim(unique(cbind(loc$lat,loc$lon))))
+data<-dbGetQuery(db,"select * from data where locid>3000&locid<3010")
+data<-dbSendQuery(db,"CREATE TABLE dataP AS SELECT timestamp,P1,P2,locid FROM data")
+data<-dbRemoveTable(db,"data")
+data<-dbSendQuery(db,"DELETE FROM dataP where P1='NA' AND P2='NA'")
+dbDisconnect()
+```
+
+```{r}
+library(RSQLite)
+db<-dbConnect(SQLite(),"db/2018-SDS011.sqlite")
+P1<-array(NA,c(100,100))
+x<-seq(5.8,15,length=101)
+y<-seq(47.2,55,length=101)
+for (i in 1:100)
+  for (j in 1:100)
+    {
+      P1[i,j]<-dbGetQuery(db,paste0("select avg(data.P1) from locid,data where locid.id=data.locid AND locid.lon>",x[i]," AND locid.lon<=",x[i+1]," AND locid.lat>",y[j]," AND locid.lat<",y[j+1]))[1,1]
+      print(c(i,j,P1[i,j]))
+  }
+dbDisconnect(db)
+```
+
+```{r}
+library(RSQLite)
+db<-dbConnect(SQLite(),"../db/CopyOf2018-SDS011.sqlite")
+P1<-dbGetQuery(db,"SELECT dataP.locid,time(dataP.timestamp),locid.lat,locid.lon,dataP.P1 from dataP,locid where date(timestamp)='2018-02-28' and locid.id=dataP.locid")
+dbDisconnect(db)
+db<-dbConnect(SQLite(),"../db/CopyOf2018-SDS011.sqlite")
+locid<-dbReadTable(db,"locid")
+dbDisconnect(db)
+
+library(gstat)
+
+bbox=array(c(5.8,47.2,15,55),c(2,2))
+dimnames(bbox)<-list(c("coords.x1","coords.x2"),c("min","max"))
+locations<-SpatialPoints(cbind(locid$lon,locid$lat),CRS("+proj=longlat +datum=WGS84"),bbox=bbox)
+
+times<-seq(as.POSIXct(0,origin="2018-02-28"),as.POSIXct(-60,origin="2018-03-01"),by="min")
+
+ST<-spacetime::ST(locations,times,times+59)
+
+timex<-strsplit(P1$`time(dataP.timestamp)`,":")
+timeindex<-unlist(parallel::mclapply(timex,function(x)as.numeric(x[1])*60+as.numeric(x[2])))+1
+remove(timex)
+
+
+sam<-sample(2254911,10^5)
+#sam<-which(!is.na(P1$P1))
+P<-gstat(formula=P1~1,locations=~lon+lat,data=P1[sam,])
+v0<-variogram(P,cutoff=7)
+sam<-sample(2254911,10^5)
+#sam<-which(!is.na(P1$P1))
+P<-gstat(formula=P1~1,locations=~lon+lat,data=P1[sam,])
+v1<-variogram(P,cutoff=7)
+sam<-sample(2254911,10^5)
+#sam<-which(!is.na(P1$P1))
+P<-gstat(formula=P1~1,locations=~lon+lat,data=P1[sam,])
+v2<-variogram(P,cutoff=7)
+
+plot(v0$dist,v0$gamma,type="l")
+lines(v1$dist,v0$gamma,type="l")
+lines(v2$dist,v0$gamma,type="l")
+
+Sys.time()
+sam<-sample(2254911,10^3)
+#sam<-which(!is.na(P1$P1))
+Pdata<-data.frame("P1"=P1$P1[sam])
+P<-spacetime::STSDF(locations, times, Pdata, cbind(P1$locid[sam],timeindex[sam]))
+
+v<-variogramST(P1~1,P, cutoff=8, width=.2, tlags=seq(0,1,length=20),assumeRegular = TRUE, na.omit=TRUE)
+plot(v)
+Sys.time()
+```
+

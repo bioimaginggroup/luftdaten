@@ -13,7 +13,7 @@ Function *luftdaten::LD_download()* saves data locally.
 ```{r eval=FALSE}
 library(luftdaten)
 library(curl)
-LD_download("/media/schmid/local/data/luftdaten/", start="2018-02-27", end="2018-02-28")
+LD_download("/media/schmid/local/data/luftdaten/", start="2018-02-27", end="2018-02-28", sensortype = "ssd")
 ```
 
 Plot the size of data per day:
@@ -151,6 +151,6 @@ Idea: One database per sensor type
 
 ```{r}
 library(luftdaten)
-LD_sql2(start="2018/01/31", end="2018/02/28", source="/media/schmid/local/data/luftdaten/",dbname="db/2018-", sensortype="sds011",verbose=FALSE)
+LD_sql2(start="2018/02/28", end="2018/02/28", source="/media/schmid/local/data/luftdaten/",dbname="db/yesterday-", sensortype="dht22",verbose=FALSE)
 ```
 

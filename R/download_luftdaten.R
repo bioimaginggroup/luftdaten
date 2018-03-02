@@ -7,7 +7,7 @@
 #' @import curl 
 #' @return files are stored in folder/
 #' @export 
-LD_download<-function(folder, start="2015-10-01",end=Sys.Date())
+LD_download<-function(folder, start="2015-10-01",end=Sys.Date(), sensortype="")
 {
   x=as.Date(start)
   end<-as.Date(end)
@@ -31,11 +31,14 @@ LD_download<-function(folder, start="2015-10-01",end=Sys.Date())
         if (out=="</pre><hr></body>")break
         out<-strsplit(out,">")[[1]][mode]
         out<-strsplit(out,"</a")[[1]]
+        dl<-TRUE
+        if (sensortype!="")if (length(grep("dht",out))==0)
+          dl<-FALSE
         if (out=="measurements.txt")break
         dest<-paste0(folder,"/",x,"/",out)
         out<-paste0("http://archive.luftdaten.info/",x,"/",out)
-        print(out)
-        curl::curl_download(out, dest)
+        if(dl)print(out)
+        if(dl)curl::curl_download(out, dest)
         Sys.sleep(time = runif(1,0.07,0.19))
       }
     }

@@ -15,9 +15,8 @@ LD_sql2<-function(start, end=Sys.Date()-1, source="/media/schmid/local/data/luft
   starttime=proc.time()[3]
   x=as.Date(start)
   end<-as.Date(end)
-  while (x<end)
+  while (x<=end)
   {
-    x<-x+1
     cat(paste0("Processing ",x,"..."))
     files<-list.files(paste0(source,"/",x))
     files<-files[grep(pattern = ".csv",files)]
@@ -112,6 +111,7 @@ LD_sql2<-function(start, end=Sys.Date()-1, source="/media/schmid/local/data/luft
             }
         }
     }
+    x<-x+1
     timing<-round(proc.time()[3]-starttime)
     starttime<-proc.time()[3]
     m<-floor(timing/60)
@@ -120,9 +120,8 @@ LD_sql2<-function(start, end=Sys.Date()-1, source="/media/schmid/local/data/luft
     m<-m%%60
     if (m<10)m<-paste0("0",m)
     if (s<10)s<-paste0("0",s)
-    if (h<10)h<-paste0("0",h)
     timing<-paste0(h,":",m,":",s)
-    cat(paste(" finished. Processing time:",timing,"\n"))
+    cat(paste("finished. Processing time:",timing,"\n"))
 
   }
 }
