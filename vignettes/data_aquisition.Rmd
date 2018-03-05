@@ -154,3 +154,4 @@ library(luftdaten)
 LD_sql2(start="2018/02/28", end="2018/02/28", source="/media/schmid/local/data/luftdaten/",dbname="db/yesterday-", sensortype="dht22",verbose=FALSE)
 ```
 
+
