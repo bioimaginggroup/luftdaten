@@ -5,10 +5,9 @@
 #'
 #' @export
 #'
-plot_loc<-function(loc, range=c(5.86,15.05,47.27,55.06))
+plot_loc<-function(loc, range=c(5.86,15.05,47.27,55.06), col="black", ...)
 {
-  library(luftdaten)
-  data(germanyborder)
+  data("germanyborder", package="luftdaten")
   if (any(is.na(range)))
     {
     min.x<-min(c(min.x,loc$lon))
@@ -30,6 +29,7 @@ plot_loc<-function(loc, range=c(5.86,15.05,47.27,55.06))
   plot(c(min.x,max.x),c(min.y,max.y),axes=FALSE,col="white",xlab="",ylab="")
   for (i in 1:length(germany16))polygon(germany16[[i]],border=grey(0.9),col="transparent")
   for (i in 1:length(germany))polygon(germany[[i]],border=grey(.5))
-  points(loc$lon,loc$lat, pch=19, cex=0.2)
+  par(...)
+  points(loc$lon,loc$lat, pch=19, cex=0.2, col=col)
 
 }
