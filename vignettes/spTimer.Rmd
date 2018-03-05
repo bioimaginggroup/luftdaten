@@ -94,7 +94,7 @@ newlon<-rep(seq(bbox[2],bbox[4],length=20),times=20)
 newcoords<-data.frame("lat"=newlat,"lon"=newlon)
 p.GP<-predict.spT(GP,newcoords=newcoords)
 
-GPP<-spT.Gibbs(data~1,coords=cbind(locid$lon[-55],locid$lat[-55]), model="GPP")
+GPP<-spT.Gibbs(data~1,coords=cbind(locid$lon[-55],locid$lat[-55]), model="GPP", knot.coords=newcoords)
 p.GPP<-predict.spT(GPP,newcoords=newcoords)
 
 plot(p.GP)
