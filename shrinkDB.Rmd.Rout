@@ -1,0 +1,32 @@
+
+R version 3.4.3 (2017-11-30) -- "Kite-Eating Tree"
+Copyright (C) 2017 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+[Previously saved workspace restored]
+
+> library(RSQLite)
+> library(DBI)
+> 
+> db<-dbConnect(SQLite(),"db/SDS011.sqlite")
+> dbListFields(db,"data")
+[1] "timestamp" "P1"        "durP1"     "ratioP1"   "P2"        "durP2"    
+[7] "ratioP2"   "locid"    
+> dbSendQuery(db,"DELETE FROM data where P1='NA' AND P2='NA'")
+Error in rsqlite_send_query(conn@ptr, statement) : database is locked
+Calls: dbSendQuery ... initialize -> initialize -> rsqlite_send_query -> .Call
+Execution halted

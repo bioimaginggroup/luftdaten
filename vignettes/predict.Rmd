@@ -1,0 +1,59 @@
+library(osmdata)
+query <- opq(bbox='Munich, Germany')
+bbox<-as.numeric(strsplit(query$bbox,",")[[1]])
+
+days<-1:28
+days<-paste0(c(rep(0,9),rep("",19)),days)
+for (dailies in days)
+{
+  
+  day <- paste0('2018-02-',dailies)
+library(RSQLite)
+db<-dbConnect(SQLite(),"db/CopyOf2018-SDS011.sqlite")
+P1<-dbGetQuery(db,paste0("SELECT dataP.locid,time(dataP.timestamp),locid.lat,locid.lon,dataP.P2 from dataP,locid where date(timestamp)='",day,"' and locid.id=dataP.locid and locid.lat<",bbox[3]," AND locid.lat>",bbox[1]," AND locid.lon>",bbox[2], " AND locid.lon<",bbox[4]))
+print(dim(P1))
+locid<-dbGetQuery(db,paste0("SELECT locid.id,locid.lat,locid.lon from dataP,locid where date(timestamp)='",day,"' and locid.id=dataP.locid and locid.lat<",bbox[3]," AND locid.lat>",bbox[1]," AND locid.lon>",bbox[2], " AND locid.lon<",bbox[4]))
+dbDisconnect(db)
+
+locations<-unique(locid)
+L<-dim(locations)[1]
+data<-rep(NA,L)
+counter<-0
+# bad coding ahead
+for (j in 1:L)
+{
+  find2<-P1$locid==locations$id[j]
+  counter<-counter+1
+  data[counter]<-mean(P1$P2[find2])
+  
+}
+data<-data.frame("P1"=data,"lat"=locations$lat,"lon"=locations$lon)
+
+bbox2=array(bbox,c(2,2))
+dimnames(bbox2)<-list(c("coords.x2","coords.x1"),c("min","max"))
+locations2<-sp::SpatialPoints(cbind(data$lon,data$lat),CRS("+proj=longlat +datum=WGS84"),bbox=bbox2)
+#coordinates(data)<-~lon+lat
+P<-gstat(formula=data$P1~1,locations=locations2)
+
+#v<-variogram(P)
+#plot(v)
+#fitP<-fit.variogram(v,vgm("Exp"))
+#plot(v,fitP)
+y<-rep(seq(bbox[2],bbox[4],length=100),each=100)
+x<-rep(seq(bbox[1],bbox[3],length=100), times=100)
+grid<-data.frame("lon"=x,"lat"=y,"NA"=NA)
+grid<-sp::SpatialPoints(cbind(grid$lat,grid$lon),CRS("+proj=longlat +datum=WGS84"),bbox=bbox2)
+z<-predict(P,grid)
+pred<-t(array(z$var1.pred,c(100,100)))
+fields::image.plot(seq(bbox[2],bbox[4],length=100),seq(bbox[1],bbox[3],length=100),pred, xlab="", ylab="")
+points(locations2)
+
+#library(osmdata)
+#query <- opq(bbox='Munich, Germany')
+
+#query <- add_osm_feature(query, key='highway', value='secondary')
+#test<-osmdata_sp(query)
+sp::plot(test$osm_lines, add=TRUE)
+title(main=day)
+#P1.kriged <- krige(formula=P1 ~ 1, data=P, locations = ~lat+lon, P1, grid, model=fitP,bbox=bbox2)
+}
