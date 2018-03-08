@@ -1,0 +1,11 @@
+8	Get borders of Germany.Rmd
+8	Looking At Data.Rmd
+8	Plotting P.Rmd
+8	data_aquisition.Rmd
+8	predict.Rmd
+8	shrinkDB.Rmd
+0	size.txt
+16	spTimer.Rmd
+1632	spTimer.nb.html
+8	splitDBinMonths.R
+96	test.png

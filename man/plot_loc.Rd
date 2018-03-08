@@ -4,7 +4,7 @@
 \alias{plot_loc}
 \title{Plot locations from database}
 \usage{
-plot_loc(loc, range = c(5.86, 15.05, 47.27, 55.06))
+plot_loc(loc, range = c(5.86, 15.05, 47.27, 55.06), col = "black", ...)
 }
 \arguments{
 \item{loc}{dataframe with lat and lon (latitude and longitude)}

@@ -1,0 +1,28 @@
+library(RSQLite)
+library(DBI)
+
+db<-dbConnect(SQLite(),"db/SDS011.sqlite")
+dbListFields(db,"data")
+dbSendQuery(db,"DELETE FROM data where P1='NA' AND P2='NA'")
+dbSendQuery(db,"VACUUM")
+dbDisconnect(db)
+
+res<-dbSendQuery(db,"SELECT ratioP1 from data")
+test<-NA
+while(all(is.na(test)))
+{
+  test<-dbFetch(res, n=100000)
+}
+print(dbGetInfo(res))
+
+db<-dbConnect(SQLite(),"db/SDS011.sqlite")
+dbSendQuery(db,"CREATE TABLE data2 AS SELECT timestamp,P1,P2,locid FROM data")
+dbRemoveTable(db,"data")
+dbSendQuery(db,"VACUUM")
+dbSendQuery(db,"DELETE FROM data2 where P1='NA' AND P2='NA'")
+dbSendQuery(db,"VACUUM")
+dbSendQuery(db,"CREATE TABLE data AS SELECT timestamp,P1,P2,locid FROM data")
+dbRemoveTable(db,"data")
+dbSendQuery(db,"VACUUM")
+dbDisconnect(db)
+

@@ -6,6 +6,8 @@
 #' @param sensortype vector with sensortypes to process
 #' @param dbname character, file name of database (for backup)
 #' @param verbose print more information
+#' 
+#' @import RSQLite DBI
 #'
 #' @return no return
 #' @export
@@ -125,5 +127,3 @@ LD_sql2<-function(start, end=Sys.Date()-1, source="/media/schmid/local/data/luft
 
   }
 }
-
-

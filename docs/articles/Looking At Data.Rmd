@@ -1,0 +1,135 @@
+---
+title: "Looking into data"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(luftdaten)
+setwd("../") #we are in vignette directory
+#data(sensortypes)
+load("inst/data/sensortypes.rda")
+sensortypes<-sensortypes[c(2,4,5,6,7,8,9,10)]
+for (s in toupper(sensortypes))
+{
+  db<-dbConnect(SQLite(),paste0("db/",s,".sqlite"))
+  cat(s)
+  cat(": ")
+  cat(dbListFields(db,"data"))
+  cat("\n")
+  dbDisconnect(db)
+}
+for (s in toupper(sensortypes))
+{
+  db<-dbConnect(SQLite(),paste0("db/",s,".sqlite"))
+  cat(s)
+  cat(": ")
+  cat(dim(dbReadTable(db,"data")))
+  cat("\n")
+  dbDisconnect(db)
+}
+for (s in toupper(sensortypes))
+{
+  db<-dbConnect(SQLite(),paste0("db/",s,".sqlite"))
+  cat(s)
+  cat(": ")
+  cat(dim(dbReadTable(db,"locid")))
+  cat("\n")
+  dbDisconnect(db)
+}
+```
+
+
+
+```{r locations, include=TRUE}
+setwd("../")
+for (s in toupper(sensortypes))
+{
+  db<-dbConnect(SQLite(),paste0("db/",s,".sqlite"))
+  plot_loc(db, range=c(5.8,15.1,47.2,55.1))
+  title(s)
+  dbDisconnect(db)
+}
+```
+
+
+## Plotting using Open Stree Map data
+
+download osm data
+```{r eval=FALSE}
+curl::curl_download("https://download.geofabrik.de/europe/germany-latest.osm.pbf","data/germany.osm.pbf")
+curl::curl_download("https://download.geofabrik.de/europe/germany/bayern/oberbayern-latest.osm.pbf","data/oberbayern.osm.pbf")
+```
+
+osmar can not read pbf. Try osmconvert
+
+```{bash}
+sudo apt install osmctools
+osmconvert data/oberbayern-latest.osm.pbf > data/obb.osm
+```
+
+
+
+
+```{r munich}
+  s<-"BME280"
+  db<-dbConnect(SQLite(),paste0("../db/",s,".sqlite"))
+  loc<-dbGetQuery(db, "SELECT lat, lon from locid where lon>8.8 AND lon<9.4 AND lat>48.1 AND lat<48.9")
+  plot(loc$lon, loc$lat)
+  
+  library(osmar)
+  src <- osmsource_file("../data/obb.osm")
+
+bb <- center_bbox(11.58, 48.15, 1000, 1000) #roughly lmu 
+ctown <- get_osm(bb, source = src)
+road <- find(ctown, way(tags(k == "highway" & v=="secondary")))
+road <- find_down(ctown, way(road))
+road <- subset(ctown, ids = road)
+plot_ways(road)
+road <- find(ctown, way(tags(k == "highway" & v=="tertiary")))
+road <- find_down(ctown, way(road))
+road <- subset(ctown, ids = road)
+plot_ways(road,add=TRUE, col="red")
+points(loc$lon, loc$lat, col="blue", pch=19)
+```
+
+```{r}
+  library(osmar)
+  plot(c(11.5,11.6),c(48.1,48.2),col="transparent",xlab="",ylab="",axes=FALSE)
+  for (x in seq(11.5,11.6,0.01))
+    for (y in seq(48.1,48.2,0.01))
+    {
+      bb <- center_bbox(x, y, 500, 500) 
+      ctown <- get_osm(bb, source = src)
+      for (j in c("motorway","trunk","primary","secondary","tertiary"))
+        {
+        road <- find(ctown, way(tags(k == "highway" & v==j)))
+        road <- find_down(ctown, way(road))
+        road <- subset(ctown, ids = road)
+        plot_ways(road, add=TRUE)
+        }
+        road <- find(ctown, way(tags(k == "highway" & v=="residential")))
+        road <- find_down(ctown, way(road))
+        road <- subset(ctown, ids = road)
+        plot_ways(road, add=TRUE, col=grey(.6))
+    }
+```
+
+
+
+
+```{r}
+library(osmdata)
+query <- opq(bbox='Munich, Germany')
+
+query <- add_osm_feature(query, key='highway', value='!residential')
+test<-osmdata_sp(query)
+sp::plot(test$osm_lines)
+
+load("~/Dropbox/loc.rda")
+points(loc$lat,loc$lon)
+```
+

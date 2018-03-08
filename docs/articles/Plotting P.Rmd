@@ -1,0 +1,140 @@
+---
+title: "Plotting P"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Lets plot P measurement
+
+```{r}
+library(RSQLite)
+db<-dbConnect(SQLite(),"../db/CopyOf2018-SDS011.sqlite")
+#loc<-dbReadTable(db,"locid")
+#print(dim(loc))
+#plot_loc(loc)
+#print(dim(unique(cbind(loc$lat,loc$lon))))
+#data<-dbGetQuery(db,"select * from data where locid>3000&locid<3010")
+dbSendQuery(db,"CREATE TABLE dataP AS SELECT timestamp,P1,P2,locid FROM data")
+dbRemoveTable(db,"data")
+dbSendQuery(db,"VACUUM")
+dbSendQuery(db,"DELETE FROM dataP where P1='NA' AND P2='NA'")
+#dbSendQuery(db,"DELETE FROM dataP where date(timestamp)!='2018-02-28'")
+dbSendQuery(db,"VACUUM")
+dbDisconnect(db)
+```
+
+```{r}
+library(RSQLite)
+db<-dbConnect(SQLite(),"db/2018-SDS011.sqlite")
+P1<-array(NA,c(100,100))
+x<-seq(5.8,15,length=101)
+y<-seq(47.2,55,length=101)
+for (i in 1:100)
+  for (j in 1:100)
+    {
+      P1[i,j]<-dbGetQuery(db,paste0("select avg(data.P1) from locid,data where locid.id=data.locid AND locid.lon>",x[i]," AND locid.lon<=",x[i+1]," AND locid.lat>",y[j]," AND locid.lat<",y[j+1]))[1,1]
+      print(c(i,j,P1[i,j]))
+  }
+dbDisconnect(db)
+```
+
+```{r}
+library(RSQLite)
+db<-dbConnect(SQLite(),"../db/CopyOf2018-SDS011.sqlite")
+P1<-dbGetQuery(db,"SELECT dataP.locid,time(dataP.timestamp),locid.lat,locid.lon,dataP.P1 from dataP,locid where date(timestamp)='2018-02-28' and locid.id=dataP.locid")
+dbDisconnect(db)
+db<-dbConnect(SQLite(),"../db/CopyOf2018-SDS011.sqlite")
+locid<-dbReadTable(db,"locid")
+dbDisconnect(db)
+
+library(gstat)
+
+bbox=array(c(5.8,47.2,15,55),c(2,2))
+dimnames(bbox)<-list(c("coords.x1","coords.x2"),c("min","max"))
+locations<-sp::SpatialPoints(cbind(locid$lon,locid$lat),CRS("+proj=longlat +datum=WGS84"),bbox=bbox)
+
+times<-seq(as.POSIXct(0,origin="2018-02-28"),as.POSIXct(-60,origin="2018-03-01"),by="min")
+
+ST<-spacetime::ST(locations,times,times+59)
+
+timex<-strsplit(P1$`time(dataP.timestamp)`,":")
+timeindex<-unlist(parallel::mclapply(timex,function(x)as.numeric(x[1])*60+as.numeric(x[2])))+1
+remove(timex)
+
+
+sam<-sample(2254911,10^5)
+#sam<-which(!is.na(P1$P1))
+P<-gstat(formula=P1~1,locations=~lon+lat,data=P1[sam,])
+v0<-variogram(P,cutoff=31,width=1)
+fit.variogram(v0,vgm("Sph"))
+sam<-sample(2254911,10^5)
+#sam<-which(!is.na(P1$P1))
+P<-gstat(formula=P1~1,locations=~lon+lat,data=P1[sam,])
+v1<-variogram(P,cutoff=7)
+sam<-sample(2254911,10^5)
+#sam<-which(!is.na(P1$P1))
+P<-gstat(formula=P1~1,locations=~lon+lat,data=P1[sam,])
+v2<-variogram(P,cutoff=7)
+
+sam<-sample(2254911,10^5)
+P<-gstat(formula=log(P1)~1,locations=~lon+lat,data=P1[sam,])
+v.log<-variogram(P,cutoff=31,width=1)
+fitP<-fit.variogram(v.log,vgm("Mat"))
+
+
+plot(v0$dist,v0$gamma,type="l")
+lines(v1$dist,v0$gamma,type="l")
+lines(v2$dist,v0$gamma,type="l")
+
+Sys.time()
+sam<-sample(2254911,10^3)
+#sam<-which(!is.na(P1$P1))
+Pdata<-data.frame("P1"=P1$P1[sam])
+P<-spacetime::STSDF(locations, times, Pdata, cbind(P1$locid[sam],timeindex[sam]))
+
+v<-variogramST(P1~1,P, cutoff=8, width=.2, tlags=seq(0,1,length=20),assumeRegular = TRUE, na.omit=TRUE)
+plot(v)
+Sys.time()
+```
+
+
+```{r}
+P1$loc<-factor(P1$locid)
+P.loc<-by(P1$P1,P1$loc,mean,na.rm=TRUE)
+```
+```{r}
+png("test.png")
+plot(c(5.8,15),c(47.2,55),col="transparent",axes=FALSE,xlab="",ylab="")
+col=log(P.loc)-1
+col<-floor(col*16)
+col[col<1]<-1
+col[col>64]<-64
+plot_loc(loc,col=fields::tim.colors(n=64)[col], cex=0.5)
+dev.off()
+```
+
+```{r}
+P1$logP1<-log(P1$P1)
+P1$logP1[P1$logP1<=0]<-NA
+P0<-P1[!is.na(P1$logP1),]
+sam<-sample(dim(P0)[1],10^5)
+P0<-P0[sam,]
+P<-gstat(formula=logP1~1,locations=~lon+lat,data=P0)
+
+v.log<-variogram(P, cutoff=.3)
+plot(v.log)
+fitP<-fit.variogram(v.log,vgm("Mat"))
+
+x<-rep(seq(5.8,15,length=100),each=100)
+y<-rep(seq(47.2,55,length=100), times=100)
+grid<-data.frame("lon"=x,"lat"=y,"NA"=NA)
+coordinates(grid)<-~lon+lat
+
+logP1.kriged <- krige(formula=logP1 ~ 1, locations, P1, grid, model=fitP)
+
+coordinates(meuse.grid) <- ~ x + y # step 3 above
+lzn.kriged <- krige(log(zinc) ~ 1, meuse, meuse.grid, model=fitP)
+```

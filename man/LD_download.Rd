@@ -4,7 +4,8 @@
 \alias{LD_download}
 \title{Download csv files from archive.liftdaten.info}
 \usage{
-LD_download(folder, start = "2015-10-01", end = Sys.Date())
+LD_download(folder, start = "2015-10-01", end = Sys.Date(),
+  sensortype = "")
 }
 \arguments{
 \item{folder}{folder to store csv}
