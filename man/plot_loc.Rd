@@ -4,12 +4,15 @@
 \alias{plot_loc}
 \title{Plot locations from database}
 \usage{
-plot_loc(loc, range = c(5.86, 15.05, 47.27, 55.06), col = "black", ...)
+plot_loc(loc, bbox = c(range(locid$lat), range(locid$lon))[c(1, 3, 2, 4)],
+  col = "black")
 }
 \arguments{
 \item{loc}{dataframe with lat and lon (latitude and longitude)}
 
-\item{range}{vector of length 4, corners of area to plot}
+\item{bbox}{bounding box}
+
+\item{col}{colour for each point (forwarded to points)}
 }
 \description{
 Plot locations from database

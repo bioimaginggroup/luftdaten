@@ -1,8 +1,8 @@
 Package: luftdaten
 Type: Package
 Title: Analysing data from luftdaten.info
-Version: 0.1.12
-Date: 2018-03-08
+Version: 0.1.13
+Date: 2018-03-09
 Author: Volker Schmid (volker.schmid@lmu.de)
 Authors@R: person("Volker", "Schmid", role = c("aut", "cre"), email = "volker.schmid@lmu.de")
 Maintainer: Volker Schmid <volker.schmid@lmu.det>
