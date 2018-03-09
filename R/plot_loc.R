@@ -21,7 +21,6 @@ plot_loc<-function(loc, bbox=c(range(locid$lat),range(locid$lon))[c(1,3,2,4)], c
   plot(c(min.x,max.x),c(min.y,max.y),axes=FALSE,col="white",xlab="",ylab="")
   for (i in 1:length(germany16))polygon(germany16[[i]],border=grey(0.9),col="transparent")
   for (i in 1:length(germany))polygon(germany[[i]],border=grey(.5))
-  par(...)
   points(loc$lon,loc$lat, pch=19, col=col)
 
 }
